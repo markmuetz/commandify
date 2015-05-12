@@ -1,0 +1,7 @@
+.*.swp
+*.pyc
+build/
+dist/
+docs/_build
+commandify.egg-info/
+MANIFEST
