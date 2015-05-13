@@ -4,8 +4,8 @@ import subprocess
 import os
 
 
-sys.path.insert(0, '../commandify')
-import commandify_examples as ce
+sys.path.insert(0, '..')
+import commandify.commandify_examples as ce
 import commandify as cmdify
 os.chdir('../commandify')
 
