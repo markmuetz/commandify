@@ -1,10 +1,11 @@
 Change Log
 ==========
 
-Version 0.0.3 (Alpha) - May 13, 2015
+Version 0.0.3.1 (Alpha) - May 13, 2015
 --------------------------------------
 
 * Switch to subclassing ``argparse.ArgumentParser`` to allow more flexibility.
+* Allow for providing arguments for all functions
 
 Version 0.0.2.2 (Alpha) - May 13, 2015
 --------------------------------------

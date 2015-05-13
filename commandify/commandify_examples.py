@@ -9,7 +9,7 @@
         commandify_examples cmd_no_args
 
 '''
-from commandify import commandify, commandify_old, command, main_command
+from commandify import commandify, command, main_command
 
 
 @main_command(main_arg={'flag': '-m', 'type': int})

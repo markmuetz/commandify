@@ -58,7 +58,8 @@ class CommandifyError(Exception):
         self.error_type = error_type
 
 
-def _add_commands_to_parser(command, parser, dec_args, dec_kwargs):
+def _add_commands_to_parser(command, parser, dec_args, dec_kwargs,
+                            provide_args=[]):
     # Work out defaults for each command, set all defaults to _NoDefaultClass
     # then loop over default args (as defined in function signature) settings
     # them as necessary.
@@ -70,7 +71,7 @@ def _add_commands_to_parser(command, parser, dec_args, dec_kwargs):
     # Loop over varnames (function argument names) and defaults, adding an
     # argparse argument.
     for varname, default in zip(command.__code__.co_varnames, defaults):
-        if varname == 'args':
+        if varname == 'args' or varname in provide_args:
             # args is ignored so its default should not be set.
             if default != _NoDefaultClass:
                 raise CommandifyError(
@@ -111,22 +112,26 @@ def _add_commands_to_parser(command, parser, dec_args, dec_kwargs):
                               .format(', '.join(dec_kwargs.keys())))
 
 
-def _get_command_args(command, args):
+def _get_command_args(command, args, provide_args):
     '''Work out the command arguments for a given command'''
     command_args = {}
 
-    print(command)
-    print(args)
-    print(command.__code__.co_varnames)
     for varname in command.__code__.co_varnames:
         if varname == 'args':
             command_args['args'] = args
+        elif varname in provide_args:
+            command_args[varname] = provide_args[varname]
         else:
             command_args[varname] = getattr(args, varname)
     return command_args
 
 
 class CommandifyArgumentParser(ArgumentParser):
+    def __init__(self, provide_args={}, debug=False, *args, **kwargs):
+        super(CommandifyArgumentParser, self).__init__(*args, **kwargs)
+        self.provide_args = provide_args
+        self.debug = debug
+
     def setup_arguments(self):
         try:
             if len(_main_commands) == 0:
@@ -141,10 +146,10 @@ class CommandifyArgumentParser(ArgumentParser):
             # Setup main command.
             main_command, main_args, main_kwargs =\
                 list(_main_commands.values())[0]
-            print(main_command)
             main_doc = main_command.__doc__
             description = main_doc.split('\n')[0] if main_doc else None
-            _add_commands_to_parser(main_command, self, main_args, main_kwargs)
+            _add_commands_to_parser(main_command, self,
+                                    main_args, main_kwargs, self.provide_args)
 
             # Setup subcommands.
             subparsers = self.add_subparsers(dest='command')
@@ -155,7 +160,8 @@ class CommandifyArgumentParser(ArgumentParser):
                     help = None
                 subparser = subparsers.add_parser(name, help=help)
                 _add_commands_to_parser(command, subparser,
-                                        dec_args, dec_kwargs)
+                                        dec_args, dec_kwargs,
+                                        self.provide_args)
 
         except CommandifyError as e:
             if e.error_type == 'user':
@@ -179,8 +185,10 @@ class CommandifyArgumentParser(ArgumentParser):
             # Bad choice of name: main_command, clashes with function.
             main_command, main_args, main_kwargs =\
                 list(_main_commands.values())[0]
-            main_command_args = _get_command_args(main_command, self.args)
-            command_args = _get_command_args(command, self.args)
+            main_command_args = _get_command_args(main_command, self.args,
+                                                  self.provide_args)
+            command_args = _get_command_args(command, self.args,
+                                             self.provide_args)
 
             # Run commands.
             main_command(**main_command_args)
@@ -204,12 +212,8 @@ def commandify():
     parser.exit(status=0)
 
 
-# Deprecated.
-def commandify_old():
-    '''Turns decorated functions into command line args
-
-    Finds the main_command and all commands and generates command line args
-    from these.'''
+def _commandify_old():
+    print('Warning, deprecated, please use commandify instead')
     parser = ArgumentParser(add_help=False)
     try:
         if len(_main_commands) == 0:
