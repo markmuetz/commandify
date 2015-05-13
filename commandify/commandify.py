@@ -1,6 +1,7 @@
 '''Decorators/functions for turning functions into command line arguments'''
 from collections import OrderedDict
 from argparse import ArgumentParser
+from functools import wraps
 
 
 _commands = OrderedDict()
@@ -21,8 +22,11 @@ def command(*dec_args, **dec_kwargs):
 
 def _store_command(dec_args, dec_kwargs, command_container):
     if len(dec_args) == 1 and callable(dec_args[0]):
-        command_container[dec_args[0].__name__] = (dec_args[0], [], {})
+        func = dec_args[0]
+        command_container[func.__name__] = (func, [], {})
 
+        # Preserve e.g. docstring.
+        @wraps(func)
         def decorator_wrapper(*func_args, **func_kwargs):
             return func(*func_args, **func_kwargs)
         return decorator_wrapper
@@ -31,6 +35,8 @@ def _store_command(dec_args, dec_kwargs, command_container):
         def decorator(func):
             command_container[func.__name__] = (func, dec_args, dec_kwargs)
 
+            # Preserve e.g. docstring.
+            @wraps(func)
             def decorator_wrapper(*func_args, **func_kwargs):
                 return func(*func_args, **func_kwargs)
         return decorator
@@ -137,7 +143,7 @@ def commandify():
         main_command, main_args, main_kwargs = list(_main_command.values())[0]
         main_doc = main_command.__doc__
         description = main_doc.split('\n')[0] if main_doc else None
-        parser = ArgumentParser(description=description, add_help=False)
+        parser = ArgumentParser(description=description)
         _add_commands_to_parser(main_command, parser, main_args, main_kwargs)
 
         # Setup subcommands.

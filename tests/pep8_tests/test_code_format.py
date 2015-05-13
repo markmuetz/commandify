@@ -2,7 +2,7 @@ from glob import glob
 import pep8
 
 
-class TestCodeFormat:
+class TestCodeFormat(object):
     def __init__(self):
         self.pep8style = pep8.StyleGuide()
 
