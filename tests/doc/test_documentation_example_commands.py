@@ -39,7 +39,7 @@ class TestDocumentationExampleCommands(object):
         for cmd, args, kwargs in cmdify._commands.values():
             cmds.extend(parse_doc_for_commands(cmd.__doc__))
 
-        for cmd, args, kwargs in cmdify._main_command.values():
+        for cmd, args, kwargs in cmdify._main_commands.values():
             cmds.extend(parse_doc_for_commands(cmd.__doc__))
 
         for cmd in cmds:

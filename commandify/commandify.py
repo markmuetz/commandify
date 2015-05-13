@@ -5,14 +5,14 @@ from functools import wraps
 
 
 _commands = OrderedDict()
-_main_command = OrderedDict()
+_main_commands = OrderedDict()
 
 
 def main_command(*dec_args, **dec_kwargs):
     '''Decorator for adding to main function (entry point)
 
     Should only be applied to one function'''
-    return _store_command(dec_args, dec_kwargs, _main_command)
+    return _store_command(dec_args, dec_kwargs, _main_commands)
 
 
 def command(*dec_args, **dec_kwargs):
@@ -115,6 +115,9 @@ def _get_command_args(command, args):
     '''Work out the command arguments for a given command'''
     command_args = {}
 
+    print(command)
+    print(args)
+    print(command.__code__.co_varnames)
     for varname in command.__code__.co_varnames:
         if varname == 'args':
             command_args['args'] = args
@@ -123,24 +126,103 @@ def _get_command_args(command, args):
     return command_args
 
 
+class CommandifyArgumentParser(ArgumentParser):
+    def setup_arguments(self):
+        try:
+            if len(_main_commands) == 0:
+                raise CommandifyError('No main_command defined\n'
+                                      'Please add the @main_command decorator '
+                                      'to one function')
+            elif len(_main_commands) > 1:
+                raise CommandifyError('More than one main_command defined\n'
+                                      'Please add the @main_command decorator '
+                                      'to only one function')
+
+            # Setup main command.
+            main_command, main_args, main_kwargs =\
+                list(_main_commands.values())[0]
+            print(main_command)
+            main_doc = main_command.__doc__
+            description = main_doc.split('\n')[0] if main_doc else None
+            _add_commands_to_parser(main_command, self, main_args, main_kwargs)
+
+            # Setup subcommands.
+            subparsers = self.add_subparsers(dest='command')
+            for name, (command, dec_args, dec_kwargs) in _commands.items():
+                if command.__doc__:
+                    help = command.__doc__.split('\n')[0]
+                else:
+                    help = None
+                subparser = subparsers.add_parser(name, help=help)
+                _add_commands_to_parser(command, subparser,
+                                        dec_args, dec_kwargs)
+
+        except CommandifyError as e:
+            if e.error_type == 'user':
+                self.print_help()
+            self.exit(status=1,
+                      message='{0}: error: {1}\n'.format(self.prog, e))
+
+    def parse_args(self, *args, **kwargs):
+        self.args = super(CommandifyArgumentParser, self).parse_args(*args,
+                                                                     **kwargs)
+        return self.args
+
+    def dispatch_commands(self):
+        try:
+            if self.args.command is None:
+                raise CommandifyError('too few arguments', 'user')
+
+            command, _, _ = _commands[self.args.command]
+
+            # Get arguments for both commands.
+            # Bad choice of name: main_command, clashes with function.
+            main_command, main_args, main_kwargs =\
+                list(_main_commands.values())[0]
+            main_command_args = _get_command_args(main_command, self.args)
+            command_args = _get_command_args(command, self.args)
+
+            # Run commands.
+            main_command(**main_command_args)
+            command(**command_args)
+        except CommandifyError as e:
+            if e.error_type == 'user':
+                parser.print_help()
+            parser.exit(status=1,
+                        message='{0}: error: {1}\n'.format(parser.prog, e))
+
+
 def commandify():
+    '''Turns decorated functions into command line args
+
+    Finds the main_command and all commands and generates command line args
+    from these.'''
+    parser = CommandifyArgumentParser()
+    parser.setup_arguments()
+    args = parser.parse_args()
+    parser.dispatch_commands()
+    parser.exit(status=0)
+
+
+# Deprecated.
+def commandify_old():
     '''Turns decorated functions into command line args
 
     Finds the main_command and all commands and generates command line args
     from these.'''
     parser = ArgumentParser(add_help=False)
     try:
-        if len(_main_command) == 0:
+        if len(_main_commands) == 0:
             raise CommandifyError('No main_command defined\n'
                                   'Please add the @main_command decorator to '
                                   'one function')
-        elif len(_main_command) > 1:
+        elif len(_main_commands) > 1:
             raise CommandifyError('More than one main_command defined\n'
                                   'Please add the @main_command decorator to '
                                   'only one function')
 
         # Setup main command.
-        main_command, main_args, main_kwargs = list(_main_command.values())[0]
+        main_command, main_args, main_kwargs = list(_main_commands.values())[0]
         main_doc = main_command.__doc__
         description = main_doc.split('\n')[0] if main_doc else None
         parser = ArgumentParser(description=description)
