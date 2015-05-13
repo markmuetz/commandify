@@ -1,26 +1,26 @@
 Release Procedure
 =================
 
-Before first release::
+Before first release:
 
-* [Check credentials in `~/.pypirc`]
-* `python setup.py register`
+* [Check credentials in ``~/.pypirc``]
+* ``python setup.py register``
 
 For each release:
 
 * Run tests:
-  * `cd tests`
-  * `nosetests`
+    * ``cd tests``
+    * ``nosetests``
 * Update VERSION.txt
 * Update ``changelog.rst``
 * Update PyPI project:
-  * `python setup.py sdist upload`
+    * ``python setup.py sdist upload``
 * Build/upload docs:
-  * `cd docs`
-  * `make html`
-  * `make zip_html`
-  * (Follow instructions to upload to PyPI)
+    * ``cd docs``
+    * ``make html``
+    * ``make zip_html``
+    * (Follow instructions to upload to PyPI)
 * git commit and tag release:
-  * `git commit -a`
-  * `git tag release_0.0.2`
-  * `git push --tags`
+    * ``git commit -a``
+    * ``git tag release_0.0.2``
+    * ``git push --tags``
