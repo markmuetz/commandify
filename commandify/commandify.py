@@ -21,7 +21,7 @@ def command(*dec_args, **dec_kwargs):
 
 def _store_command(dec_args, dec_kwargs, command_container):
     if len(dec_args) == 1 and callable(dec_args[0]):
-        command_container[dec_args[0].func_name] = (dec_args[0], [], {})
+        command_container[dec_args[0].__name__] = (dec_args[0], [], {})
 
         def decorator_wrapper(*func_args, **func_kwargs):
             return func(*func_args, **func_kwargs)
@@ -29,7 +29,7 @@ def _store_command(dec_args, dec_kwargs, command_container):
     else:
 
         def decorator(func):
-            command_container[func.func_name] = (func, dec_args, dec_kwargs)
+            command_container[func.__name__] = (func, dec_args, dec_kwargs)
 
             def decorator_wrapper(*func_args, **func_kwargs):
                 return func(*func_args, **func_kwargs)
@@ -43,22 +43,31 @@ class _NoDefaultClass(object):
     pass
 
 
+class CommandifyError(Exception):
+    '''Exceptions thrown by commandify'''
+    def __init__(self, message, error_type='code'):
+        super(CommandifyError, self).__init__(message)
+        if error_type not in ['code', 'user']:
+            raise Exception('Error type {0} not understood'.format(error_type))
+        self.error_type = error_type
+
+
 def _add_commands_to_parser(command, parser, dec_args, dec_kwargs):
     # Work out defaults for each command, set all defaults to _NoDefaultClass
     # then loop over default args (as defined in function signature) settings
     # them as necessary.
-    defaults = [_NoDefaultClass] * command.func_code.co_argcount
-    if command.func_defaults:
-        for i in range(1, len(command.func_defaults) + 1):
-            defaults[-i] = command.func_defaults[-i]
+    defaults = [_NoDefaultClass] * command.__code__.co_argcount
+    if command.__defaults__:
+        for i in range(1, len(command.__defaults__) + 1):
+            defaults[-i] = command.__defaults__[-i]
 
     # Loop over varnames (function argument names) and defaults, adding an
     # argparse argument.
-    for varname, default in zip(command.func_code.co_varnames, defaults):
+    for varname, default in zip(command.__code__.co_varnames, defaults):
         if varname == 'args':
             # args is ignored so its default should not be set.
             if default != _NoDefaultClass:
-                raise Exception(
+                raise CommandifyError(
                     'Should not set a default value for args keyword')
             else:
                 continue
@@ -79,8 +88,8 @@ def _add_commands_to_parser(command, parser, dec_args, dec_kwargs):
         # Default can either be set in the function arguments or as a an option
         # to the command(...) decorator.
         if 'default' in arg_kwargs and default != _NoDefaultClass:
-            raise Exception('default set twice for function/method {0}'
-                            .format(command.func_name))
+            raise CommandifyError('default set twice for function/method {0}'
+                                  .format(command.__name__))
         if 'default' in arg_kwargs:
             default = arg_kwargs.pop('default')
 
@@ -92,15 +101,15 @@ def _add_commands_to_parser(command, parser, dec_args, dec_kwargs):
             parser.add_argument(*arg_args, required=True, **arg_kwargs)
     # Check all decorator args have been accounted for.
     if dec_kwargs:
-        raise Exception('Unexpected command options: {0}'
-                        .format(', '.join(dec_kwargs.keys())))
+        raise CommandifyError('Unexpected command options: {0}'
+                              .format(', '.join(dec_kwargs.keys())))
 
 
 def _get_command_args(command, args):
     '''Work out the command arguments for a given command'''
     command_args = {}
 
-    for varname in command.func_code.co_varnames:
+    for varname in command.__code__.co_varnames:
         if varname == 'args':
             command_args['args'] = args
         else:
@@ -113,20 +122,22 @@ def commandify():
 
     Finds the main_command and all commands and generates command line args
     from these.'''
-    parser = ArgumentParser()
+    parser = ArgumentParser(add_help=False)
     try:
         if len(_main_command) == 0:
-            raise Exception('No main_command defined\n'
-                            'Please add the @main_command decorator to one'
-                            'function')
+            raise CommandifyError('No main_command defined\n'
+                                  'Please add the @main_command decorator to '
+                                  'one function')
         elif len(_main_command) > 1:
-            raise Exception('More than one main_command defined\n'
-                            'Please add the @main_command decorator to only'
-                            'one function')
+            raise CommandifyError('More than one main_command defined\n'
+                                  'Please add the @main_command decorator to '
+                                  'only one function')
 
         # Setup main command.
-        main_command, main_args, main_kwargs = _main_command.values()[0]
-        parser = ArgumentParser(usage=main_command.__doc__)
+        main_command, main_args, main_kwargs = list(_main_command.values())[0]
+        main_doc = main_command.__doc__
+        description = main_doc.split('\n')[0] if main_doc else None
+        parser = ArgumentParser(description=description, add_help=False)
         _add_commands_to_parser(main_command, parser, main_args, main_kwargs)
 
         # Setup subcommands.
@@ -141,6 +152,9 @@ def commandify():
 
         # Parse commands and work out which one user has chosen.
         args = parser.parse_args()
+        if args.command is None:
+            raise CommandifyError('too few arguments', 'user')
+
         command, _, _ = _commands[args.command]
 
         # Get arguments for both commands.
@@ -150,7 +164,10 @@ def commandify():
         # Run commands.
         main_command(**main_command_args)
         command(**command_args)
-    except Exception, e:
-        parser.exit(status=1, message='Error: {0}\n'.format(e.message))
+    except CommandifyError as e:
+        if e.error_type == 'user':
+            parser.print_help()
+        parser.exit(status=1,
+                    message='{0}: error: {1}\n'.format(parser.prog, e))
 
     parser.exit(status=0)
