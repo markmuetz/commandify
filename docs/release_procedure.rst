@@ -12,6 +12,7 @@ For each release:
   * `cd tests`
   * `nosetests`
 * Update VERSION.txt
+* Update ``changelog.rst``
 * Update PyPI project:
   * `python setup.py sdist upload`
 * Build/upload docs:
@@ -19,7 +20,6 @@ For each release:
   * `make html`
   * `make zip_html`
   * (Follow instructions to upload to PyPI)
-* Update ``changelog.rst``
 * git commit and tag release:
   * `git commit -a`
   * `git tag release_0.0.2`
