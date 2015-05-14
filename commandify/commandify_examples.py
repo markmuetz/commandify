@@ -12,7 +12,7 @@
 from commandify import commandify, command, main_command
 
 
-@main_command(main_arg={'flag': '-m', 'type': int})
+@main_command(main_arg={'flag': '-m'})
 def main(main_arg=345):
     '''Example of how to use commandify
     Main command, called before any other command
@@ -25,6 +25,7 @@ def main(main_arg=345):
         commandify_examples cmd_no_args
 
     '''
+    print(type(main_arg))
     print("Main command: {0}".format(main_arg))
 
 
@@ -75,11 +76,27 @@ def cmd3(some_arg, arg_with_default='arg_default'):
         commandify_examples cmd3 --arg-with-default=default_overridden
 
     '''
+    # Type of some_arg will be int:
+    print(type(some_arg))
     print(some_arg, arg_with_default)
 
 
 @command
-def cmd4():
+def cmd4(some_arg=False):
+    '''Command with bool default
+    usage::
+
+        commandify_examples cmd4
+        commandify_examples cmd4 --some-arg
+
+    '''
+    # Type of some_arg will be int:
+    print(type(some_arg))
+    print(some_arg)
+
+
+@command
+def cmd5():
     print('cmd4 called')
 
 
