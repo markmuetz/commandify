@@ -59,16 +59,19 @@ class CommandifyError(Exception):
 
 
 class CommandifyArgumentParser(ArgumentParser):
-    def __init__(self, provide_args={}, guess_type=True, 
-                 suppress_warnings=False, *args, **kwargs):
+    def __init__(self, provide_args={}, guess_type=True,
+                 suppress_warnings=[], *args, **kwargs):
         super(CommandifyArgumentParser, self).__init__(*args, **kwargs)
         self.provide_args = provide_args
         self.guess_type = guess_type
         self.suppress_warnings = suppress_warnings
+        self.replaced_bool_args = []
 
-    def _warn(self, message):
-        if not self.suppress_warnings:
+    def _warn(self, kind, message):
+        if kind not in self.suppress_warnings:
             print('COMMANDIFY WARNING: {0}'.format(message))
+            print('...Disable warning by passing suppress_warnings=["{0}"]'
+                  .format(kind))
 
     def setup_arguments(self):
         try:
@@ -107,8 +110,8 @@ class CommandifyArgumentParser(ArgumentParser):
                       message='{0}: error: {1}\n'.format(self.prog, e))
 
     def _add_commands_to_parser(self, command, parser, dec_args, dec_kwargs):
-        # Work out defaults for each command, set all defaults to 
-        # _NoDefaultClass then loop over default args (as defined in function 
+        # Work out defaults for each command, set all defaults to
+        # _NoDefaultClass then loop over default args (as defined in function
         # signature) settings them as necessary.
         defaults = [_NoDefaultClass] * command.__code__.co_argcount
         if command.__defaults__:
@@ -141,7 +144,7 @@ class CommandifyArgumentParser(ArgumentParser):
                 flag = arg_kwargs.pop('flag')
                 arg_args.append(flag)
 
-            # Default can either be set in the function arguments or as a an 
+            # Default can either be set in the function arguments or as a an
             # option to the command(...) decorator.
             if 'default' in arg_kwargs and default != _NoDefaultClass:
                 raise CommandifyError('default set twice for func/method {0}'
@@ -155,9 +158,19 @@ class CommandifyArgumentParser(ArgumentParser):
                     default_type = type(default)
                     if default_type == bool:
                         if default:
-                            self._warn('Setting {0} to store_false'
-                                      .format(argname))
-                            arg_kwargs['action'] = 'store_false'
+                            self._warn('default_true',
+                                       'Setting {0} to not-{0}'
+                                       .format(argname))
+                            # arg_kwargs['action'] = 'store_false'
+                            # Idea: replace arg_args[0] with something like:
+                            # arg_args[0] = '--not-' + arg_args[0][2:]
+                            # Then handle this on _get_command_args.
+                            negated_arg = '--not-' + arg_args[0][2:]
+                            self.replaced_bool_args.append(
+                                command.__name__ + ':' + varname)
+                            arg_args[0] = negated_arg
+                            arg_kwargs['action'] = 'store_true'
+                            default = False
                         else:
                             arg_kwargs['action'] = 'store_true'
                     else:
@@ -190,8 +203,6 @@ class CommandifyArgumentParser(ArgumentParser):
             main_command_args = self._get_command_args(main_command, self.args)
             command_args = self._get_command_args(command, self.args)
 
-            for k, v in command_args.items():
-                print(k, v)
             # Run commands.
             main_command(**main_command_args)
             command(**command_args)
@@ -213,7 +224,11 @@ class CommandifyArgumentParser(ArgumentParser):
             elif varname in self.provide_args:
                 command_args[varname] = self.provide_args[varname]
             else:
-                command_args[varname] = getattr(args, varname)
+                if command.__name__ + ':' + varname in self.replaced_bool_args:
+                    arg_varname = 'not_' + varname
+                    command_args[varname] = not getattr(args, arg_varname)
+                else:
+                    command_args[varname] = getattr(args, varname)
         return command_args
 
 

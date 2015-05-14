@@ -83,22 +83,39 @@ def cmd3(some_arg, arg_with_default='arg_default'):
 
 @command
 def cmd4(some_arg=False):
-    '''Command with bool default
+    '''Command with False bool default
     usage::
 
         commandify_examples cmd4
         commandify_examples cmd4 --some-arg
 
     '''
-    # Type of some_arg will be int:
+    # Type of some_arg will be bool:
     print(type(some_arg))
     print(some_arg)
 
 
 @command
-def cmd5():
-    print('cmd4 called')
+def cmd5(some_arg=True):
+    '''Command with True bool default
+    Command line argument gets turned into negative to handle this.
+    usage::
+
+        commandify_examples cmd5
+        commandify_examples cmd5 --not-some-arg
+
+    '''
+    # Type of some_arg will be bool:
+    print(type(some_arg))
+    # If it is called without specifying --not-some-arg, it will be True.
+    print(some_arg)
+
+
+@command
+def cmd6():
+    print('cmd6 called')
 
 
 if __name__ == '__main__':
-    commandify()
+    commandify(suppress_warnings=['default_true'])
+    # commandify()

@@ -15,5 +15,4 @@ class TestCodeFormat(object):
     def test_1_commandify_pep8_conformance(self):
         """Test that commandify module conforms to PEP8."""
         filenames = glob('commandify/*.py')
-        filenames.append('commandify/commandify_examples')
         self._test_conformance_in_files(filenames)
