@@ -11,16 +11,15 @@ For each release:
 * Run tests:
     * ``cd tests``
     * ``nosetests``
-* Update VERSION.txt
+* Update ``commandify/version.py``
 * Update ``changelog.rst``
+* Build/upload docs:
+    * ``cd docs && make zip_html``
+    * (Follow instructions to upload to PyPI)
 * Update PyPI project:
     * ``python setup.py sdist upload``
-* Build/upload docs:
-    * ``cd docs``
-    * ``make html``
-    * ``make zip_html``
-    * (Follow instructions to upload to PyPI)
 * git commit and tag release:
     * ``git commit -a``
+    * ``git push``
     * ``git tag release_0.0.2``
     * ``git push --tags``

@@ -5,6 +5,8 @@ try:
 except ImportError:
     from distutils.core import setup, Extension
 
+from commandify.version import get_version
+
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -12,7 +14,7 @@ def read(fname):
 
 setup(
     name='commandify',
-    version=read('VERSION.txt').rstrip(),
+    version=get_version(),
     description='Simple command line commands through decorators',
     long_description=read('README.rst'),
     author='Mark Muetzelfeldt',
