@@ -1,11 +1,12 @@
 Change Log
 ==========
 
-Version 0.0.4.0 (Alpha) - May 14, 2015
+Version 0.0.4.1 (Alpha) - May 14, 2015
 --------------------------------------
 
 * Change ``VERSION.txt`` to ``commandify/version.py``
 * Allow for providing arguments for all functions
+* Update setup.py to be able to run tests
 
 Version 0.0.3.1 (Alpha) - May 13, 2015
 --------------------------------------
