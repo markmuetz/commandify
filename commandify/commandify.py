@@ -70,7 +70,9 @@ def _add_commands_to_parser(command, parser, dec_args, dec_kwargs,
 
     # Loop over varnames (function argument names) and defaults, adding an
     # argparse argument.
-    for varname, default in zip(command.__code__.co_varnames, defaults):
+    command_arguments =\
+        command.__code__.co_varnames[:command.__code__.co_argcount]
+    for varname, default in zip(command_arguments, defaults):
         if varname == 'args' or varname in provide_args:
             # args is ignored so its default should not be set.
             if default != _NoDefaultClass:
@@ -116,7 +118,7 @@ def _get_command_args(command, args, provide_args):
     '''Work out the command arguments for a given command'''
     command_args = {}
 
-    for varname in command.__code__.co_varnames:
+    for varname in command.__code__.co_varnames[:command.__code__.co_argcount]:
         if varname == 'args':
             command_args['args'] = args
         elif varname in provide_args:
