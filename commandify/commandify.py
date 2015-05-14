@@ -59,10 +59,16 @@ class CommandifyError(Exception):
 
 
 class CommandifyArgumentParser(ArgumentParser):
-    def __init__(self, provide_args={}, guess_type=True, *args, **kwargs):
+    def __init__(self, provide_args={}, guess_type=True, 
+                 suppress_warnings=False, *args, **kwargs):
         super(CommandifyArgumentParser, self).__init__(*args, **kwargs)
         self.provide_args = provide_args
         self.guess_type = guess_type
+        self.suppress_warnings = suppress_warnings
+
+    def _warn(self, message):
+        if not self.suppress_warnings:
+            print('COMMANDIFY WARNING: {0}'.format(message))
 
     def setup_arguments(self):
         try:
@@ -149,6 +155,8 @@ class CommandifyArgumentParser(ArgumentParser):
                     default_type = type(default)
                     if default_type == bool:
                         if default:
+                            self._warn('Setting {0} to store_false'
+                                      .format(argname))
                             arg_kwargs['action'] = 'store_false'
                         else:
                             arg_kwargs['action'] = 'store_true'
@@ -209,12 +217,12 @@ class CommandifyArgumentParser(ArgumentParser):
         return command_args
 
 
-def commandify():
+def commandify(*args, **kwargs):
     '''Turns decorated functions into command line args
 
     Finds the main_command and all commands and generates command line args
     from these.'''
-    parser = CommandifyArgumentParser()
+    parser = CommandifyArgumentParser(*args, **kwargs)
     parser.setup_arguments()
     args = parser.parse_args()
     parser.dispatch_commands()
