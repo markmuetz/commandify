@@ -9,8 +9,8 @@ Before first release:
 For each release:
 
 * Run tests:
-    * ``cd tests``
-    * ``nosetests``
+    * ``python setup.py test``
+    * [or ``nosetests``]
 * Update ``commandify/version.py``
 * Update ``changelog.rst``
 * Build/upload docs:

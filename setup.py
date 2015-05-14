@@ -5,6 +5,8 @@ try:
 except ImportError:
     from distutils.core import setup, Extension
 
+from subprocess import call
+
 from commandify.version import get_version
 
 
@@ -23,9 +25,11 @@ setup(
     maintainer_email='markmuetz@gmail.com',
     packages=['commandify'],
     scripts=['commandify/commandify_examples'],
+    url='https://github.com/markmuetz/commandify',
+    test_suite='nose.collector',
+    tests_require=['nose'],
     install_requires=[],
     data_files=[],
-    url='https://github.com/markmuetz/commandify',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
