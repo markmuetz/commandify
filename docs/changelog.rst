@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+Version 0.0.4.2 (Alpha) - May 15, 2015
+--------------------------------------
+
+* Fix serious bug that meant that all local vars in func were counted as arguments
+* Auto setting of type=<type> for default args based on default's type
+* Handle some_arg=[True|False] in natural way
+
 Version 0.0.4.1 (Alpha) - May 14, 2015
 --------------------------------------
 
