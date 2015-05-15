@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+Version 0.0.4.3 (Alpha) - May 15, 2015
+--------------------------------------
+
+* Add in unit tests for main command only
+* Change handling of ``parse_args`` in main parser so that the NS returned 
+  has had e.g. ``not_some_arg=True`` replaced by ``some_arg=False``
+
 Version 0.0.4.2 (Alpha) - May 15, 2015
 --------------------------------------
 
