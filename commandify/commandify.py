@@ -75,6 +75,7 @@ class CommandifyArgumentParser(ArgumentParser):
 
     def setup_arguments(self):
         try:
+            print(_main_commands)
             if len(_main_commands) == 0:
                 raise CommandifyError('No main_command defined\n'
                                       'Please add the @main_command decorator '
@@ -92,16 +93,17 @@ class CommandifyArgumentParser(ArgumentParser):
             self._add_commands_to_parser(main_command, self,
                                          main_args, main_kwargs)
 
-            # Setup subcommands.
-            subparsers = self.add_subparsers(dest='command')
-            for name, (command, dec_args, dec_kwargs) in _commands.items():
-                if command.__doc__:
-                    help = command.__doc__.split('\n')[0]
-                else:
-                    help = None
-                subparser = subparsers.add_parser(name, help=help)
-                self._add_commands_to_parser(command, subparser,
-                                             dec_args, dec_kwargs)
+            if len(_commands):
+                # Setup subcommands.
+                subparsers = self.add_subparsers(dest='command')
+                for name, (command, dec_args, dec_kwargs) in _commands.items():
+                    if command.__doc__:
+                        help = command.__doc__.split('\n')[0]
+                    else:
+                        help = None
+                    subparser = subparsers.add_parser(name, help=help)
+                    self._add_commands_to_parser(command, subparser,
+                                                 dec_args, dec_kwargs)
 
         except CommandifyError as e:
             if e.error_type == 'user':
@@ -118,8 +120,8 @@ class CommandifyArgumentParser(ArgumentParser):
             for i in range(1, len(command.__defaults__) + 1):
                 defaults[-i] = command.__defaults__[-i]
 
-        # Loop over varnames (function argument names) and defaults, adding an
-        # argparse argument.
+        # Loop over varnames (function argument names *and* local vars)
+        # and defaults, adding an argparse argument.
         command_argument_names =\
             command.__code__.co_varnames[:command.__code__.co_argcount]
         for varname, default in zip(command_argument_names, defaults):
@@ -164,10 +166,9 @@ class CommandifyArgumentParser(ArgumentParser):
                             # arg_kwargs['action'] = 'store_false'
                             # Idea: replace arg_args[0] with something like:
                             # arg_args[0] = '--not-' + arg_args[0][2:]
-                            # Then handle this on _get_command_args.
+                            # Then handle this on parse_args.
                             negated_arg = '--not-' + arg_args[0][2:]
-                            self.replaced_bool_args.append(
-                                command.__name__ + ':' + varname)
+                            self.replaced_bool_args.append(varname)
                             arg_args[0] = negated_arg
                             arg_kwargs['action'] = 'store_true'
                             default = False
@@ -175,9 +176,11 @@ class CommandifyArgumentParser(ArgumentParser):
                             arg_kwargs['action'] = 'store_true'
                     else:
                         arg_kwargs['type'] = default_type
+                print(arg_args, default, arg_kwargs)
                 parser.add_argument(*arg_args, default=default, **arg_kwargs)
             else:
                 # Any arguments without a default are required.
+                # print(arg_args, 'req', arg_kwargs)
                 parser.add_argument(*arg_args, required=True, **arg_kwargs)
         # Check all decorator args have been accounted for.
         if dec_kwargs:
@@ -187,25 +190,39 @@ class CommandifyArgumentParser(ArgumentParser):
     def parse_args(self, *args, **kwargs):
         self.args = super(CommandifyArgumentParser, self).parse_args(*args,
                                                                      **kwargs)
+        # Replace not_some_arg=True with some_arg=False.
+        for varname in self.replaced_bool_args:
+            neg_varname = 'not_' + varname
+            if neg_varname in self.args:
+                neg_val = self.args.__dict__.pop(neg_varname)
+                self.args.__dict__[varname] = not neg_val
+
+        print(self.args)
         return self.args
 
     def dispatch_commands(self):
         try:
-            if self.args.command is None:
-                raise CommandifyError('too few arguments', 'user')
-
-            command, _, _ = _commands[self.args.command]
+            if len(_commands):
+                if self.args.command is None:
+                    raise CommandifyError('too few arguments', 'user')
 
             # Get arguments for both commands.
             # Bad choice of name: main_command, clashes with function.
             main_command, main_args, main_kwargs =\
                 list(_main_commands.values())[0]
             main_command_args = self._get_command_args(main_command, self.args)
-            command_args = self._get_command_args(command, self.args)
+            if len(_commands):
+                command, _, _ = _commands[self.args.command]
+                command_args = self._get_command_args(command, self.args)
 
             # Run commands.
-            main_command(**main_command_args)
-            command(**command_args)
+            main_ret = main_command(**main_command_args)
+            if len(_commands):
+                command_ret = command(**command_args)
+                return main_ret, command_ret
+            else:
+                return main_ret, None
+
         except CommandifyError as e:
             if e.error_type == 'user':
                 parser.print_help()
@@ -224,11 +241,7 @@ class CommandifyArgumentParser(ArgumentParser):
             elif varname in self.provide_args:
                 command_args[varname] = self.provide_args[varname]
             else:
-                if command.__name__ + ':' + varname in self.replaced_bool_args:
-                    arg_varname = 'not_' + varname
-                    command_args[varname] = not getattr(args, arg_varname)
-                else:
-                    command_args[varname] = getattr(args, varname)
+                command_args[varname] = getattr(args, varname)
         return command_args
 
 

@@ -92,6 +92,7 @@ def cmd4(some_arg=False):
     '''
     # Type of some_arg will be bool:
     print(type(some_arg))
+    # If it is called specifying --some-arg, it will be True.
     print(some_arg)
 
 

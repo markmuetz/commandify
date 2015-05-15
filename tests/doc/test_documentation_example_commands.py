@@ -2,7 +2,6 @@ import inspect
 import subprocess
 import os
 
-import commandify.commandify_examples as ce
 import commandify as cmdify
 
 
