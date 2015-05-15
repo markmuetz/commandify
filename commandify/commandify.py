@@ -75,7 +75,6 @@ class CommandifyArgumentParser(ArgumentParser):
 
     def setup_arguments(self):
         try:
-            print(_main_commands)
             if len(_main_commands) == 0:
                 raise CommandifyError('No main_command defined\n'
                                       'Please add the @main_command decorator '
@@ -176,11 +175,9 @@ class CommandifyArgumentParser(ArgumentParser):
                             arg_kwargs['action'] = 'store_true'
                     else:
                         arg_kwargs['type'] = default_type
-                print(arg_args, default, arg_kwargs)
                 parser.add_argument(*arg_args, default=default, **arg_kwargs)
             else:
                 # Any arguments without a default are required.
-                # print(arg_args, 'req', arg_kwargs)
                 parser.add_argument(*arg_args, required=True, **arg_kwargs)
         # Check all decorator args have been accounted for.
         if dec_kwargs:
@@ -197,7 +194,6 @@ class CommandifyArgumentParser(ArgumentParser):
                 neg_val = self.args.__dict__.pop(neg_varname)
                 self.args.__dict__[varname] = not neg_val
 
-        print(self.args)
         return self.args
 
     def dispatch_commands(self):
