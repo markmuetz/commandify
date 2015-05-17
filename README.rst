@@ -1,7 +1,7 @@
 Commandify
 ==========
 
-Allows simple creation of Python command line utilities through decorating functions.
+Allows simple creation of Python command line utilities through decorating functions. Builds on the ``argparse`` module in the standard library. Optionally uses the ``argcomplete`` module to provide command line tab-completion for bash/zsh.
 
 Installation
 ============

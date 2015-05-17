@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 0.0.4.5 (Alpha) - May 17, 2015
+--------------------------------------
+
+* Add support for ``argcomplete``
+
 Version 0.0.4.3 (Alpha) - May 15, 2015
 --------------------------------------
 

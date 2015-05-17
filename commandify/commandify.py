@@ -246,8 +246,19 @@ def commandify(*args, **kwargs):
 
     Finds the main_command and all commands and generates command line args
     from these.'''
+    if 'use_argcomplete' in kwargs:
+        use_argcomplete = kwargs.pop('use_argcomplete')
+    else:
+        use_argcomplete = False
     parser = CommandifyArgumentParser(*args, **kwargs)
     parser.setup_arguments()
+    if use_argcomplete:
+        try:
+            import argcomplete
+        except ImportError:
+            print('argcomplete not installed, please install it.')
+            parser.exit(status=0)
+        argcomplete.autocomplete(parser)
     args = parser.parse_args()
     parser.dispatch_commands()
     parser.exit(status=0)

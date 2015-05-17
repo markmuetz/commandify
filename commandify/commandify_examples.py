@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Only required if you want to use argcomplete:
+# PYTHON_ARGCOMPLETE_OK
 '''Examples of a simple set of functions that use commandify
     usage::
 
@@ -118,5 +120,8 @@ def cmd6():
 
 
 if __name__ == '__main__':
-    commandify(suppress_warnings=['default_true'])
-    # commandify()
+    try:
+        import argcomplete
+        commandify(suppress_warnings=['default_true'], use_argcomplete=True)
+    except ImportError:
+        commandify(suppress_warnings=['default_true'])
