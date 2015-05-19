@@ -213,6 +213,7 @@ class CommandifyArgumentParser(ArgumentParser):
 
             # Run commands.
             main_ret = main_command(**main_command_args)
+            self.args.main_ret = main_ret
             if len(_commands):
                 command_ret = command(**command_args)
                 return main_ret, command_ret
@@ -241,15 +242,11 @@ class CommandifyArgumentParser(ArgumentParser):
         return command_args
 
 
-def commandify(*args, **kwargs):
+def commandify(use_argcomplete=False, exit=True, *args, **kwargs):
     '''Turns decorated functions into command line args
 
     Finds the main_command and all commands and generates command line args
     from these.'''
-    if 'use_argcomplete' in kwargs:
-        use_argcomplete = kwargs.pop('use_argcomplete')
-    else:
-        use_argcomplete = False
     parser = CommandifyArgumentParser(*args, **kwargs)
     parser.setup_arguments()
     if use_argcomplete:
@@ -257,8 +254,13 @@ def commandify(*args, **kwargs):
             import argcomplete
         except ImportError:
             print('argcomplete not installed, please install it.')
-            parser.exit(status=0)
+            parser.exit(status=2)
+        # Must happen between setup_arguments() and parse_args().
         argcomplete.autocomplete(parser)
     args = parser.parse_args()
-    parser.dispatch_commands()
-    parser.exit(status=0)
+    if exit:
+        parser.dispatch_commands()
+        parser.exit(0)
+    else:
+        return parser.dispatch_commands()
+

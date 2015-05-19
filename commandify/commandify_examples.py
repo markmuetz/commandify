@@ -27,8 +27,10 @@ def main(main_arg=345):
         commandify_examples cmd_no_args
 
     '''
-    print(type(main_arg))
     print("Main command: {0}".format(main_arg))
+    print(type(main_arg))
+
+    return main_arg
 
 
 @command
@@ -116,12 +118,55 @@ def cmd5(some_arg=True):
 
 @command
 def cmd6():
+    # Command with no docstring.
     print('cmd6 called')
+
+
+@command
+def cmd7(args):
+    '''All commands can easily access argparse args object
+    usage::
+
+        commandify_examples cmd7
+
+    '''
+    print('cmd7 called')
+    print(args)
+
+
+@command
+def cmd8(args):
+    '''All commands can access main command return value through args
+    usage:
+        commandify_examples cmd8
+    '''
+    print('cmd8 called')
+    print(args.main_ret)
+    return args.main_ret
+
+
+@command
+def cmd9(some_arg=23.):
+    '''Command values are returnd via commandify(...)
+    usage::
+
+        commandify_examples cmd9
+
+    '''
+    return some_arg**2
 
 
 if __name__ == '__main__':
     try:
         import argcomplete
-        commandify(suppress_warnings=['default_true'], use_argcomplete=True)
+        main_ret, command_ret =\
+            commandify(suppress_warnings=['default_true'], 
+                       use_argcomplete=True, 
+                       exit=False)
+        print('Main return: {0}'.format(main_ret))
+        print('Command return: {0}'.format(command_ret))
     except ImportError:
-        commandify(suppress_warnings=['default_true'])
+        main_ret, command_ret = commandify(suppress_warnings=['default_true'], 
+                                           exit=False)
+        print('Main return: {0}'.format(main_ret))
+        print('Command return: {0}'.format(command_ret))
