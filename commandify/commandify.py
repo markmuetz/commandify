@@ -263,4 +263,3 @@ def commandify(use_argcomplete=False, exit=True, *args, **kwargs):
         parser.exit(0)
     else:
         return parser.dispatch_commands()
-

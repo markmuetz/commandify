@@ -103,8 +103,9 @@ class ErrorRaisingArgumentParser(cmdify.CommandifyArgumentParser):
 class BaseUnitTest(unittest.TestCase):
     def setUp(self):
         self.parser = ErrorRaisingArgumentParser()
-        cmdify._commands = OrderedDict()
-        cmdify._main_commands = OrderedDict()
+        cmdify._main_commands.clear()
+        cmdify._commands.clear()
+
 
     def _run_dispatch_tests(self, failures, successes):
         self.parser.setup_arguments()
@@ -300,6 +301,153 @@ class TestMainDispatch(BaseUnitTest):
         successes = [
             ('', NS(arg=True), (True, None)),
             ('--not-arg', NS(arg=False), (False, None)),
+        ]
+
+        self._run_dispatch_tests(failures, successes)
+        assert count == len(successes) + start_count
+
+    def test_8_access_args(self):
+        start_count = count
+        @cmdify.main_command
+        def m(args, some_arg):
+            global count
+            count += 1
+            return args.some_arg
+
+        failures = ['f', 'args', '--args', '--arg', '-a']
+
+        successes = [
+            ('--some-arg=sarah', NS(some_arg='sarah'), ('sarah', None)),
+        ]
+
+        self._run_dispatch_tests(failures, successes)
+        assert count == len(successes) + start_count
+
+class TestCommandDispatch(BaseUnitTest):
+    def test_1_blank(self):
+        start_count = count
+
+        @cmdify.main_command
+        def m():
+            return None
+
+        @cmdify.command
+        def c():
+            global count
+            count += 1
+            return None
+
+
+        failures = ['f', 'arg', '-f', '--f']
+
+        successes = [
+            ('c', NS(command='c'), (None, None)),
+            ('  c  ', NS(command='c'), (None, None)),
+        ]
+
+        self._run_dispatch_tests(failures, successes)
+        assert count == len(successes) + start_count
+
+    def test_2_required_arg(self):
+        start_count = count
+
+        @cmdify.main_command
+        def m():
+            return None
+
+        @cmdify.command
+        def c(some_arg):
+            global count
+            count += 1
+            return some_arg
+
+        failures = ['f', '--some-arg', '--some-arg c', 'c', 'c --some-arg',
+            ('c --some-arg=4', NS(command='c', some_arg=4)),
+        ]
+
+        successes = [
+            ('c --some-arg=4', NS(command='c', some_arg='4'), (None, '4')),
+            ('c --some-arg=dave', NS(command='c', some_arg='dave'), (None, 'dave')),
+            ('c --some-arg john', NS(command='c', some_arg='john'), (None, 'john')),
+        ]
+
+        self._run_dispatch_tests(failures, successes)
+        assert count == len(successes) + start_count
+
+
+    def test_3_default_arg(self):
+        start_count = count
+
+        @cmdify.main_command
+        def m():
+            return None
+
+        @cmdify.command
+        def c(some_arg='jo'):
+            global count
+            count += 1
+            return some_arg
+
+        failures = ['f', '--jo', '--some-arg c', 'c --some-arg',
+            ('c', NS(command='c', some_arg='bib')),
+            ('c --some-arg=bob', NS(command='c', some_arg='bib')),
+        ]
+
+        successes = [
+            ('c', NS(command='c', some_arg='jo'), (None, 'jo')),
+            ('c --some-arg=4', NS(command='c', some_arg='4'), (None, '4')),
+            ('c --some-arg=dave', NS(command='c', some_arg='dave'), (None, 'dave')),
+            ('c --some-arg john', NS(command='c', some_arg='john'), (None, 'john')),
+        ]
+
+        self._run_dispatch_tests(failures, successes)
+        assert count == len(successes) + start_count
+
+    def test_4_access_args(self):
+        start_count = count
+
+        @cmdify.main_command
+        def m():
+            return None
+
+        @cmdify.command
+        def c(args):
+            global count
+            count += 1
+            return args.command
+
+        failures = ['args', '--args', 'c --args', 'c --args=doug',
+            ('c', NS(command='d')),
+        ]
+
+        successes = [
+            ('c', NS(command='c'), (None, 'c')),
+        ]
+
+        self._run_dispatch_tests(failures, successes)
+        assert count == len(successes) + start_count
+
+    def test_5_main_ret(self):
+        start_count = count
+
+        @cmdify.main_command
+        def m(main_arg=9):
+            return main_arg + 1
+
+        @cmdify.command
+        def c(args):
+            global count
+            count += 1
+            return args.main_ret + 1
+
+        failures = ['--main-arg=4', '--main-arg=fda c',
+            ('c', NS(command='c')),
+            ('c', NS(command='c', main_arg=10)),
+        ]
+
+        successes = [
+            ('c', NS(command='c', main_arg=9), (10, 11)),
+            ('--main-arg=22 c', NS(command='c', main_arg=22), (23, 24)),
         ]
 
         self._run_dispatch_tests(failures, successes)

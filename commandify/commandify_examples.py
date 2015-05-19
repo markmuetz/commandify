@@ -160,13 +160,13 @@ if __name__ == '__main__':
     try:
         import argcomplete
         main_ret, command_ret =\
-            commandify(suppress_warnings=['default_true'], 
-                       use_argcomplete=True, 
+            commandify(suppress_warnings=['default_true'],
+                       use_argcomplete=True,
                        exit=False)
         print('Main return: {0}'.format(main_ret))
         print('Command return: {0}'.format(command_ret))
     except ImportError:
-        main_ret, command_ret = commandify(suppress_warnings=['default_true'], 
+        main_ret, command_ret = commandify(suppress_warnings=['default_true'],
                                            exit=False)
         print('Main return: {0}'.format(main_ret))
         print('Command return: {0}'.format(command_ret))
