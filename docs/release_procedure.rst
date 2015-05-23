@@ -18,7 +18,9 @@ For each release:
     * ``cd docs && make zip_html``
     * (Follow instructions to upload to PyPI)
 * Update PyPI project:
-    * ``python setup.py sdist upload``
+    * ``python setup.py sdist bdist_wheel``
+    * ``twine upload dist/*``
+    * [OLD: don't use: ``python setup.py sdist upload``]
 * git commit and tag release:
     * ``git commit -a``
     * ``git push``
