@@ -222,9 +222,9 @@ class CommandifyArgumentParser(ArgumentParser):
 
         except CommandifyError as e:
             if e.error_type == 'user':
-                parser.print_help()
-            parser.exit(status=1,
-                        message='{0}: error: {1}\n'.format(parser.prog, e))
+                self.print_help()
+            self.exit(status=1,
+                      message='{0}: error: {1}\n'.format(self.prog, e))
 
     def _get_command_args(self, command, args):
         '''Work out the command arguments for a given command'''
