@@ -5,8 +5,6 @@ try:
 except ImportError:
     from distutils.core import setup, Extension
 
-from subprocess import call
-
 from commandify.version import get_version
 
 
