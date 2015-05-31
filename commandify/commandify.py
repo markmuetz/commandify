@@ -173,7 +173,7 @@ class CommandifyArgumentParser(ArgumentParser):
                             default = False
                         else:
                             arg_kwargs['action'] = 'store_true'
-                    elif default_type != type(None):
+                    elif not isinstance(default_type, type(None)):
                         arg_kwargs['type'] = default_type
                 parser.add_argument(*arg_args, default=default, **arg_kwargs)
             else:
